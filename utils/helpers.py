@@ -1,3 +1,22 @@
+import math
+import random
+import numpy as np
+
+#assumes num < modulus (otherwise it should be num % modulus)
+def multiplicative_inverse(num, modulus):
+    before_linear_coefficients = np.array([1, 0])
+    before_val = modulus
+    now_linear_coefficients = np.array([0, 1])
+    now_val = num
+    while (now_val > 1):
+        quotient = before_val //now_val
+        before_linear_coefficients, now_linear_coefficients = now_linear_coefficients, before_linear_coefficients - quotient*now_linear_coefficients
+        before_val, now_val = now_val, before_val - quotient*now_val
+    if (now_val != 1):
+        raise("SOMETHING WENT WRONG")
+    return now_linear_coefficients[1] % modulus
+
+
 #assumes num < mod
 #exponentiation by squaring..
 def modular_exponent(num, power, mod):
@@ -22,11 +41,44 @@ def modular_exponent(num, power, mod):
         return exp
 
 def generate_random_number_bit(bit_size):
-    return scipy.stats.randint(0, 2**(bit_size)-1)
+    return random.randint(0, 2**(bit_size)-1)
 
+def power2Odd(val):
+    power_2_count = 0
+    while val % 2 == 0:
+        val /= 2
+        power_2_count +=1
+    return power_2_count, val
+
+#Used only within a for loop to see if it should continue or not
+#if True, we can skip (it might be a prime)
+#if False.. end loop because it is not a prime
+def is_prime_helper(composite_check, power_2_count, val):
+    for _ in range(power_2_count - 1):
+        composite_check = modular_exponent(composite_check, 2, val)
+        if composite_check == val - 1:
+            return True
+    return False
+
+
+#Miller Test
+#Should be good enough under the Genereal Riemann Hypothesis
 def is_prime(val):
-    #not implemented yet
-    pass
+    if val == 2:
+        return True
+    if val % 2 == 0:
+        return False
+    power_2_count, biggest_odd_factor_sub1 = power2Odd(val-1)
+    for trial in range(2, min(val-2, int(2*math.log(val)**2)) + 1):
+        composite_check =  modular_exponent(trial, biggest_odd_factor_sub1, val)
+        if (composite_check == 1) or (composite_check == val - 1):
+            continue
+        if is_prime_helper(composite_check, power_2_count, val):
+            continue
+        else:
+            return False
+    return True
+
 
 def generate_random_prime(bit_size):
     possible_prime = generate_random_number_bit(bit_size)
@@ -48,9 +100,9 @@ def is_coprime(num, val):
 
 
 def generate_random_coprime(num):
-    val = scipy.stats.randomint(1, num-1)
+    val = random.randint(1, num-1)
     while not(is_coprime(num, val)):
-        val = scipy.stats.randomint(1, num-1)
+        val = random.randint(1, num-1)
     return val
     
     #not implemented yet
@@ -58,17 +110,5 @@ def generate_random_coprime(num):
     pass
 
 
-#assumes num < modulus (otherwise it should be num % modulus)
-def multiplicative_inverse(num, modulus):
-    before_linear_coefficients = np.array([1, 0])
-    before_val = modulus
-    now_linear_coefficients = np.array([0, 1])
-    now_val = num
-    while (now_val > 1):
-        quotient = before_val //now_val
-        before_linear_coefficients, now_linear_coefficients = now_linear_coefficients, before_linear_coefficients - quotient*now_linear_coefficients
-        before_val, now_val = now_val, before_val - quotient*now_val
-    if (now_val != 1):
-        raise("SOMETHING WENT WRONG")
-    return now_linear_coefficients[1] % modulus
+
 

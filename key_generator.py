@@ -1,7 +1,4 @@
-import numpy as np  
-import scipy
-
-from utils.helpers import generate_random_prime, generate_random_coprime
+from utils.helpers import generate_random_prime, generate_random_coprime, multiplicative_inverse
 
 class Key_Generator:
     def __init__(self, bit_size, prime_1=None, prime_2=None, public_exponent = None):
@@ -21,12 +18,12 @@ class Key_Generator:
 
     def get_key(self):
         if not(hasattr(self, 'prime_1')):
-            self.prime_1 = generate_random_prime()
+            self.prime_1 = generate_random_prime(self.bit_size)
         if not(hasattr(self, 'prime_2')):
-            self.prime_2 = generate_random_prime()
+            self.prime_2 = generate_random_prime(self.bit_size)
         #in case we get the same prime, generate again
         while (self.prime_1 == self.prime_2):
-            self.prime_2 = generate_random_prime()
+            self.prime_2 = generate_random_prime(self.bit_size)
         self.public_modulus = self.prime_1*self.prime_2
         self.phi_public_modulus = (self.prime_1 - 1)*(self.prime_2 - 1)
         if not(hasattr(self, 'public_exponent')):
