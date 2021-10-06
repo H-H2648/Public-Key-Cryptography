@@ -28,7 +28,7 @@ class Key_Generator:
         self.phi_public_modulus = (self.prime_1 - 1)*(self.prime_2 - 1)
         if not(hasattr(self, 'public_exponent')):
             self.public_exponent = generate_random_coprime(self.phi_public_modulus)
-        self.secret_exponent = multiplicative_inverse(self.public_exponent, self.phi_public_modulus)
+        _, self.secret_exponent = multiplicative_inverse(self.public_exponent, self.phi_public_modulus)
         self.public_key = [self.public_modulus, self.public_exponent]
         self.secret_key = [self.prime_1, self.prime_2, self.secret_exponent]
         return self.public_key

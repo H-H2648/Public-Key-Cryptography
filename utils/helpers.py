@@ -3,18 +3,22 @@ import random
 import numpy as np
 
 #assumes num < modulus (otherwise it should be num % modulus)
-def multiplicative_inverse(num, modulus):
+#returns (gcd of num and modulus, multiplicative inverse of num % modulus)
+def gcd_multiplicative_inverse(num, modulus):
+    if num > modulus:
+        num, modulus = modulus, num
     before_linear_coefficients = np.array([1, 0])
     before_val = modulus
     now_linear_coefficients = np.array([0, 1])
     now_val = num
-    while (now_val > 1):
+    while (now_val > 0):
         quotient = before_val //now_val
         before_linear_coefficients, now_linear_coefficients = now_linear_coefficients, before_linear_coefficients - quotient*now_linear_coefficients
         before_val, now_val = now_val, before_val - quotient*now_val
-    if (now_val != 1):
-        raise("SOMETHING WENT WRONG")
-    return now_linear_coefficients[1] % modulus
+    # if (now_val != 1):
+    #     raise("SOMETHING WENT WRONG")
+    #before_val represents gcd
+    return before_val, before_linear_coefficients[1] % modulus
 
 
 #assumes num < mod
@@ -72,6 +76,10 @@ def is_prime(val):
     for trial in range(2, min(val-2, int(2*math.log(val)**2)) + 1):
         composite_check =  modular_exponent(trial, biggest_odd_factor_sub1, val)
         if (composite_check == 1) or (composite_check == val - 1):
+            if trial == 4:
+                print('??')
+                print(composite_check)
+                print('here1')
             continue
         if is_prime_helper(composite_check, power_2_count, val):
             continue
@@ -108,6 +116,33 @@ def generate_random_coprime(num):
     #not implemented yet
     #intention: generate random value coprime to self.phi_public_modulus
     pass
+
+#assumes gcd(a, n) = 1
+def jacobi_compute_helper(a, n, prod_so_far):
+    while True:
+        if a % 2 == 0:
+            prod_so_far *= (-1)**((n**2 - 1)/8)
+            a /= 2
+            a = int(a)
+            prod_so_far = int(prod_so_far)
+        elif a > n:
+            a = a %  n 
+        elif a == 1:
+            return prod_so_far
+        elif a == 2:
+            return int(prod_so_far * (-1)**((n**2 - 1)/8))
+        else:
+            prod_so_far *= (-1)**(((a-1)/2)*((n-1)/2))
+            prod_so_far = int(prod_so_far)
+            a, n = n, a
+    
+def jacobi_compute(a, n):
+    gcd, _ = gcd_multiplicative_inverse(a, n)
+    if gcd > 1:
+        return 0
+    return jacobi_compute_helper(a, n, 1)
+        
+
 
 
 
