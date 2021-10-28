@@ -5,8 +5,6 @@ import numpy as np
 #assumes num < modulus (otherwise it should be num % modulus)
 #returns (gcd of num and modulus, multiplicative inverse of num % modulus)
 def gcd_multiplicative_inverse(num, modulus):
-    if num > modulus:
-        num, modulus = modulus, num
     before_linear_coefficients = np.array([1, 0])
     before_val = modulus
     now_linear_coefficients = np.array([0, 1])
@@ -76,10 +74,6 @@ def is_prime(val):
     for trial in range(2, min(val-2, int(2*math.log(val)**2)) + 1):
         composite_check =  modular_exponent(trial, biggest_odd_factor_sub1, val)
         if (composite_check == 1) or (composite_check == val - 1):
-            if trial == 4:
-                print('??')
-                print(composite_check)
-                print('here1')
             continue
         if is_prime_helper(composite_check, power_2_count, val):
             continue
@@ -141,6 +135,60 @@ def jacobi_compute(a, n):
     if gcd > 1:
         return 0
     return jacobi_compute_helper(a, n, 1)
+
+def is_B_smooth(N, B_prime_lst):
+    # B_prime_lst = []
+    # for pos_prime in range(2, B + 1):
+    #     if is_prime(pos_prime):
+    #         B_prime_lst.append(pos_prime)
+    index = 0
+    factor_lst = []
+    for _ in range(len(B_prime_lst)):
+        factor_lst.append(0)
+    while index < len(B_prime_lst):
+        prime = B_prime_lst[index]
+        if (N % prime) == 0:
+            factor_lst[index] +=1
+            N = N//prime
+        else:
+            index +=1
+    if N > 1:
+        return False, None
+    else:
+        return True, factor_lst
+
+
+
+#assumes numbers are binary
+#find linearly dependent rows
+def dependent_rows(array):
+    array_copy = np.copy(array)
+    #assumes index < len(array[0]) (the number of columns)
+    #when index is called, it assumes column 0, 1, ..., index - 1 has already been upper triangulized
+    def upper_triangulize_helper(array, array_order, index):
+        column = array[:, index]
+        #where there is 1 in the column
+        pos_1s = np.where(column[index:] > 0)[0]
+        if len(pos_1s) == 0:
+            return 
+        else:
+            #the first occurence of 1 in the column
+            pos_1 = pos_1s[0] + index
+            array[[index, pos_1]] = array[[pos_1, index]]
+            array_order[[index, pos_1]] = array_order[[pos_1, index]]
+            for row in range(index + 1, len(array)):
+                if array[row][index] == 1:
+                    array[row] = (array[row] + array[index]) % 2
+                    array_order[row] = (array_order[row] + array_order[index]) % 2
+
+    array_order = np.identity(len(array))
+    for index in range(len(array[0])):
+        upper_triangulize_helper(array_copy, array_order, index)
+
+    return np.where(array_order[-1] == 1)[0]
+    
+
+
         
 
 
