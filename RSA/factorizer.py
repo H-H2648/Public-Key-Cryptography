@@ -62,6 +62,7 @@ class Factorizer:
         Y = 1
         for index in range(len(factor_basis_B)):
             Y*= factor_basis_B[index]**(desired_exponents[index])
+        Y = int(Y)
         possible_factor, _ = gcd_multiplicative_inverse(X-Y, num)
         if 1 < possible_factor and possible_factor < num:
             return int(possible_factor)
