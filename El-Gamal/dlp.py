@@ -1,4 +1,6 @@
 import math
+import random
+from utils.helpers import gcd_multiplicative_inverse, is_prime, prime_factorization
 
 class DLP:
     def __init__(self, modulus, size, generator):
@@ -26,8 +28,9 @@ class DLP:
                 if ii_lst[ii] == jj_lst[jj]:
                     return ii + jj*sqrt_size
 
-#2, 0, 
     def pollard_DLP(self, group_element):
+
+
         def transform(x, m, n):
             if x < self.modulus/3:
                 return (group_element * x) % self.modulus, m, (n+1) % self.size
@@ -38,16 +41,85 @@ class DLP:
 
         x_index, m_index, n_index = 1, 0, 0
         x_2index, m_2index, n_2index = 1, 0, 0
+        # count = 0
         while True:
+            if (x_index == group_element) and (n_index == 0):
+                return m_index
+            if (x_2index == group_element) and (n_2index == 0):
+                return m_2index
+            # count +=1
             x_index, m_index, n_index = transform(x_index, m_index, n_index)
             ##apply transform twice
             x_2index, m_2index, n_2index = transform(x_2index, m_2index, n_2index)
             x_2index, m_2index, n_2index = transform(x_2index, m_2index, n_2index)
-            print(x_index, m_index, n_index )
-            print(x_2index, m_2index, n_2index)
+            # print(f"[x_{count}, m_{count}, n_{count}] = [{x_index}, {m_index}, {n_index}] and [x_{2*count}, m_{2*count}, n_{2*count}] = [{x_2index}, {m_2index}, {n_2index}]")
             if x_index == x_2index:
-                if m_index == m_2index and group_element != 1:
-                    print("probably wrong")
-                return ((m_index - m_2index)*pow(n_2index - n_index, -1, self.size)) % self.size
+                if gcd_multiplicative_inverse(n_2index-n_index, self.size)[0] > 1:
+                    m_index, n_index = random.randint(0, self.size-1), random.randint(0, self.size-1)
+                    x_index = (pow(self.generator, m_index, self.modulus) * pow(group_element, n_index, self.modulus)) % self.modulus
+                    x_2index, m_2index, n_2index = x_index, m_index, n_index
+                    count = 0
+                else:
+                    return ((m_index - m_2index)*pow(n_2index - n_index, -1, self.size)) % self.size
+
+    #assumes self.modulus is relatively small and can be factored in reasonable amount of time
+    def pohlig_hellman_DLP(self, group_element):
+        prime_dict = prime_factorization(self.size)
+        congruences = []
+        for prime in prime_dict:
+            power = prime_dict[prime]
+            prime_power = pow(prime, power)
+            leftover = self.size//prime_power
+            temp_generator = pow(self.generator, leftover, self.modulus)
+            temp_group_element = pow(group_element, leftover, self.modulus)
+            temp_DLP = DLP(self.modulus, prime_power, temp_generator)
+            log = temp_DLP.prime_power_dlp(temp_group_element, prime)
+            congruences.append((log, leftover, prime_power))
+        #applying Chinese Remainder Theorem
+        final_log = 0
+        for log, leftover, prime_power in congruences:
+            final_log += log*leftover*pow(leftover, -1, prime_power)
+            final_log %= self.size
+        return final_log
+        
 
 
+
+
+        
+
+    #self.modulus must be some prime power
+    def prime_power_dlp(self, group_element, prime):
+        #self.size = p^e
+        #so prime = self.size + 1=
+        power = int(math.log(self.size)/math.log(prime))
+        inv_prime_power_generator_array = [0]*power
+        for jj in range(power):
+            if jj == 0:
+                inv_prime_power_generator = pow(self.generator, -1, self.modulus)
+            else:
+                inv_prime_power_generator = pow(inv_prime_power_generator, prime, self.modulus)
+            inv_prime_power_generator_array[jj] = inv_prime_power_generator
+        
+        digits = [0]*power
+        #gamma_arrays consists of gammas, where gamma_j = generator^(sum (i = j, ..., power - 1): d_jprime^j)
+        #where logarithm (the desired output) = sum i = 0 to power - 1: d_jprime^j (d_j is the jth digit of the prime-base representation of the logarithm)
+        bar_generator = pow(self.generator, pow(prime, power - 1, self.size), self.modulus)
+
+
+
+        for jj in range(power):
+            if jj == 0:
+                gamma = group_element
+            else:
+                gamma = (gamma*pow(inv_prime_power_generator_array[jj-1], digits[jj-1], self.modulus)) % self.modulus
+            bar_gamma = pow(gamma, pow(prime, power - 1 -jj, self.size), self.modulus)
+            helper_dlp_machine = DLP(self.modulus, prime, bar_generator)
+            digit = helper_dlp_machine.pollard_DLP(bar_gamma)
+            digits[jj] = digit
+        prime_base =1
+        output = 0
+        for digit in digits:
+            output += prime_base*digit
+            prime_base *= prime
+        return output
