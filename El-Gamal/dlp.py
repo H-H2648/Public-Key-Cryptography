@@ -1,7 +1,7 @@
 import math
 import random
 import numpy as np
-from utils.helpers import gcd_multiplicative_inverse, is_prime, prime_factorization, is_B_smooth, solve_linear_algebra, latex_print, latex_print_array
+from utils.helpers import gcd_multiplicative_inverse, is_prime, prime_factorization, is_B_smooth, solve_linear_algebra
 
 class DLP:
     def __init__(self, modulus, size, generator):
@@ -27,7 +27,6 @@ class DLP:
         for ii in range(sqrt_size):
             for jj in range(sqrt_size + 1):
                 if ii_lst[ii] == jj_lst[jj]:
-                    print(f"equality found: {(ii, jj)}")
                     return ii + jj*sqrt_size
 
     def pollard_DLP(self, group_element):
@@ -146,8 +145,6 @@ class DLP:
                     random_x_powered_lst.append(random_x_powered)
         random_x_array = np.array(random_x_lst)
         random_x_powered_array = np.array(random_x_powered_lst)
-        latex_print_array(random_x_array)
-        latex_print_array(random_x_powered_array)
 
         ##LINEAR ALGEBRA STAGE
         matrix_of_exponents_modulo = np.remainder(matrix_of_exponents, self.size)

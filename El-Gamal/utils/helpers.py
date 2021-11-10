@@ -111,21 +111,15 @@ def solve_linear_algebra(coefficients, output, modulo):
         else:
             array[[index, coprime_ind]] = array[[coprime_ind, index]]
             output[[index, coprime_ind]] = output[[coprime_ind, index]]
-            # print(array.astype(int))
-            # print(output.astype(int))
             #so we have 1 on the main diagonal
             const = int(array[index][index])
             array[index] = np.remainder(array[index]*pow(const, -1, modulo),  modulo)
             output[index] = np.remainder(output[index]*pow(const, -1, modulo),  modulo)
-            # print(array.astype(int))
-            # print(output.astype(int))
             for row in range(index + 1, len(array)):
                 if array[row][index] > 0:
                     const = array[row][index]
                     array[row] = (array[row] - const*array[index]) % modulo
                     output[row] = (output[row] - const*output[index]) % modulo
-                    # print(array.astype(int))
-                    # print(output.astype(int))
 
 
     for index in range(len(coefficients[0])):
