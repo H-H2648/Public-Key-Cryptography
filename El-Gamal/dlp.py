@@ -1,6 +1,7 @@
 import math
 import random
-from utils.helpers import gcd_multiplicative_inverse, is_prime, prime_factorization
+import numpy as np
+from utils.helpers import gcd_multiplicative_inverse, is_prime, prime_factorization, is_B_smooth, solve_linear_algebra, latex_print, latex_print_array
 
 class DLP:
     def __init__(self, modulus, size, generator):
@@ -26,6 +27,7 @@ class DLP:
         for ii in range(sqrt_size):
             for jj in range(sqrt_size + 1):
                 if ii_lst[ii] == jj_lst[jj]:
+                    print(f"equality found: {(ii, jj)}")
                     return ii + jj*sqrt_size
 
     def pollard_DLP(self, group_element):
@@ -41,25 +43,22 @@ class DLP:
 
         x_index, m_index, n_index = 1, 0, 0
         x_2index, m_2index, n_2index = 1, 0, 0
-        # count = 0
         while True:
             if (x_index == group_element) and (n_index == 0):
                 return m_index
             if (x_2index == group_element) and (n_2index == 0):
                 return m_2index
-            # count +=1
             x_index, m_index, n_index = transform(x_index, m_index, n_index)
             ##apply transform twice
             x_2index, m_2index, n_2index = transform(x_2index, m_2index, n_2index)
             x_2index, m_2index, n_2index = transform(x_2index, m_2index, n_2index)
-            # print(f"[x_{count}, m_{count}, n_{count}] = [{x_index}, {m_index}, {n_index}] and [x_{2*count}, m_{2*count}, n_{2*count}] = [{x_2index}, {m_2index}, {n_2index}]")
             if x_index == x_2index:
                 if gcd_multiplicative_inverse(n_2index-n_index, self.size)[0] > 1:
                     m_index, n_index = random.randint(0, self.size-1), random.randint(0, self.size-1)
                     x_index = (pow(self.generator, m_index, self.modulus) * pow(group_element, n_index, self.modulus)) % self.modulus
                     x_2index, m_2index, n_2index = x_index, m_index, n_index
-                    count = 0
                 else:
+
                     return ((m_index - m_2index)*pow(n_2index - n_index, -1, self.size)) % self.size
 
     #assumes self.modulus is relatively small and can be factored in reasonable amount of time
@@ -73,6 +72,7 @@ class DLP:
             temp_generator = pow(self.generator, leftover, self.modulus)
             temp_group_element = pow(group_element, leftover, self.modulus)
             temp_DLP = DLP(self.modulus, prime_power, temp_generator)
+            # log = temp_DLP.pollard_DLP(temp_group_element)
             log = temp_DLP.prime_power_dlp(temp_group_element, prime)
             congruences.append((log, leftover, prime_power))
         #applying Chinese Remainder Theorem
@@ -123,3 +123,45 @@ class DLP:
             output += prime_base*digit
             prime_base *= prime
         return output
+
+    def index_calculus_DLP(self, group_element, B, square_free = False, primes = None):
+        factor_basis_B = []
+        for ii in range(2, B+1):
+            if is_prime(ii):
+                factor_basis_B.append(ii)
+        matrix_of_exponents = np.zeros((len(factor_basis_B) + 10, len(factor_basis_B)))
+        num_rows = len(factor_basis_B) + 10
+        random_x_lst = []
+        random_x_powered_lst = []
+        ##RELATION GENERATING STAGE
+        for index in range(num_rows):
+            val_is_B_smooth = False
+            while not(val_is_B_smooth):
+                random_x = random.randint(1, self.size-1)
+                random_x_powered = pow(self.generator, random_x, self.modulus)
+                val_is_B_smooth, exponents = is_B_smooth(random_x_powered, factor_basis_B)
+                if val_is_B_smooth:
+                    matrix_of_exponents[index] = exponents
+                    random_x_lst.append(random_x)
+                    random_x_powered_lst.append(random_x_powered)
+        random_x_array = np.array(random_x_lst)
+        random_x_powered_array = np.array(random_x_powered_lst)
+        latex_print_array(random_x_array)
+        latex_print_array(random_x_powered_array)
+
+        ##LINEAR ALGEBRA STAGE
+        matrix_of_exponents_modulo = np.remainder(matrix_of_exponents, self.size)
+        random_xs_modulo = np.remainder(random_x_array, self.size)
+        solution_modulo = solve_linear_algebra(matrix_of_exponents_modulo, random_xs_modulo, self.size)
+
+        ##DISCRETE LOGARITHM FINDING STAGE
+        val_is_B_smooth = False
+        while not(val_is_B_smooth):
+            random_y = random.randint(1, self.size - 1)
+            logarithm_finder = (group_element*pow(self.generator, random_y, self.modulus))%self.modulus
+            val_is_B_smooth, exponents = is_B_smooth(logarithm_finder, factor_basis_B)
+        log =  (np.dot(np.array(exponents), solution_modulo) - random_y) % self.size
+        return int(log)
+
+
+

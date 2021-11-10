@@ -94,28 +94,55 @@ def is_B_smooth(N, B_prime_lst):
 
 #upper triangulizes with respect to modulo p
 #
-def upper_triangulize(array, modulo):
-    array_copy = np.copy(array)
+def solve_linear_algebra(coefficients, output, modulo):
     #assumes index < len(array[0]) (the number of columns)
     #when index is called, it assumes column 0, 1, ..., index - 1 has already been upper triangulized
-    def upper_triangulize_helper(array, array_order, index):
+    def upper_triangulize_helper(array, output, index):
         column = array[:, index]
-        #where there is 1 in the column
-        pos_1s = np.where(column[index:] > 0)[0]
-        if len(pos_1s) == 0:
-            return 
+        coprime_ind = -1
+        for ii in range(index, len(column)):
+            if (column[ii] > 0 and gcd_multiplicative_inverse(column[ii], modulo)[0] == 1):
+                coprime_ind = ii
+                break
+        if coprime_ind == -1:
+            return -1
+
+
         else:
-            #the first occurence of 1 in the column
-            pos_1 = pos_1s[0] + index
-            array[[index, pos_1]] = array[[pos_1, index]]
-            array_order[[index, pos_1]] = array_order[[pos_1, index]]
+            array[[index, coprime_ind]] = array[[coprime_ind, index]]
+            output[[index, coprime_ind]] = output[[coprime_ind, index]]
+            # print(array.astype(int))
+            # print(output.astype(int))
+            #so we have 1 on the main diagonal
+            const = int(array[index][index])
+            array[index] = np.remainder(array[index]*pow(const, -1, modulo),  modulo)
+            output[index] = np.remainder(output[index]*pow(const, -1, modulo),  modulo)
+            # print(array.astype(int))
+            # print(output.astype(int))
             for row in range(index + 1, len(array)):
-                if array[row][index] == 1:
-                    array[row] = (array[row] + array[index]) % 2
-                    array_order[row] = (array_order[row] + array_order[index]) % 2
+                if array[row][index] > 0:
+                    const = array[row][index]
+                    array[row] = (array[row] - const*array[index]) % modulo
+                    output[row] = (output[row] - const*output[index]) % modulo
+                    # print(array.astype(int))
+                    # print(output.astype(int))
 
-    array_order = np.identity(len(array))
-    for index in range(len(array[0])):
-        upper_triangulize_helper(array_copy, array_order, index)
 
-    return np.where(array_order[-1] == 1)[0]
+    for index in range(len(coefficients[0])):
+        #fails when there is no coprime to modulus in the column (should rarely happen)
+        if upper_triangulize_helper(coefficients, output, index) == -1:
+            return -1
+
+    #linearly dependent
+    for index in range(len(coefficients[0])):
+        if coefficients[index][index] == 0:
+            return -1
+
+    solution = np.zeros(len(coefficients[0]))
+    for index in range(len(coefficients[0])-1, -1, -1):
+        solution[index] = output[index]
+        for temp_index in range(len(coefficients[0])-1, index, -1):
+            solution[index] = ((solution[index] - solution[temp_index]*coefficients[index][temp_index]) % modulo)
+    return solution.astype(int)
+
+
