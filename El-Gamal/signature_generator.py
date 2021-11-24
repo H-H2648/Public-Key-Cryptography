@@ -24,7 +24,7 @@ class Signature_Generator:
     def generate_signature_DSA(self):
         ss = 0
         while ss == 0:
-            random_int = randint(1, self.size)
+            random_int = randint(1, self.size - 1)
             if gcd_multiplicative_inverse(random_int, self.size)[0] > 1:
                 random_int = randint(1, self.size)
             rr = (pow(self.generator, random_int, self.public_modulus)) % self.size

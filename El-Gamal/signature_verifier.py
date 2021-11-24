@@ -14,5 +14,5 @@ class Signature_Verifier:
         w = pow(signature[1], -1, self.size)
         u1 = (self.message*w)% self.size
         u2 = (signature[0]*w)% self.size
-        temp_v = ((pow(self.generator, u1, self.public_modulus)*pow(self.some_value, u2, self.public_modulus)) % self.modulus) % self.size
+        temp_v = ((pow(self.generator, u1, self.public_modulus)*pow(self.some_value, u2, self.public_modulus)) % self.public_modulus) % self.size
         return (signature[0] == temp_v)

@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # print(f"public key: {pub_key}")
     # print(f"h: {pub_key[3]}")
     # message = 37917
-    el_gamal_Generator = Key_Generator(6, 3, 2)
+    el_gamal_Generator = Key_Generator(7, 3, 2)
     pub_key = el_gamal_Generator.get_key()
     print(f"public key: {pub_key}")
     print(f"h: {pub_key[3]}")
