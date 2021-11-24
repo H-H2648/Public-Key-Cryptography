@@ -7,5 +7,7 @@ class Decryptor:
         self.secret_key = secret_key
         self.cipher = cipher
     
+    ### TODO: FIX IT
+    ###doesn't really work when self.public_modulus is not prime
     def decrypt(self):
         return (self.cipher[1]*pow(self.cipher[0], -self.secret_key, self.public_modulus)) % self.public_modulus

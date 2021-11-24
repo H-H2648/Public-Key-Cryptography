@@ -10,7 +10,7 @@ class Encryptor:
 
                 
     def encrypt(self):
-        exponent = random.randint(1, self.size-1)
+        exponent = random.randint(1, self.size)
         print(f"r: {exponent}")
         cipher1 = pow(self.generator, exponent, self.public_modulus)
         cipher2 = (self.message*pow(self.some_value, exponent, self.public_modulus)) % self.public_modulus
